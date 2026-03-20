@@ -28,6 +28,7 @@ if ($LASTEXITCODE -ne 0) {
 # Step 2: Build frontend
 Write-Host "`n[2/4] Building frontend..." -ForegroundColor Green
 Set-Location $FrontendPath
+npm install --silent
 npm run build
 if ($LASTEXITCODE -ne 0) {
     Write-Host "Build failed!" -ForegroundColor Red
