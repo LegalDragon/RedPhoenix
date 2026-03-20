@@ -141,10 +141,10 @@ export default function Login() {
                   <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
                   <input
                     type="tel"
-                    value={formatPhone(phone)}
-                    onChange={handlePhoneChange}
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value.replace(/\D/g, '').slice(0, 10))}
                     className="w-full pl-10 pr-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent text-lg"
-                    placeholder="(555) 123-4567"
+                    placeholder="9544665557"
                     autoFocus
                   />
                 </div>
