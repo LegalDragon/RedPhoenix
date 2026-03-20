@@ -227,6 +227,36 @@ public class AuthController : ControllerBase
     }
 
     /// <summary>
+    /// Set password for admin user (one-time bootstrap, only works if no password set)
+    /// </summary>
+    [HttpPost("set-password")]
+    public async Task<IActionResult> SetPassword([FromBody] SetPasswordRequest request)
+    {
+        if (string.IsNullOrWhiteSpace(request.Phone) || string.IsNullOrWhiteSpace(request.Password))
+            return BadRequest(new { message = "Phone and password are required" });
+
+        var phone = new string(request.Phone.Where(char.IsDigit).ToArray());
+
+        using var conn = CreateConnection();
+        var user = await conn.QueryFirstOrDefaultAsync<User>(
+            "SELECT * FROM Users WHERE Phone = @Phone AND Role = 'Admin'", new { Phone = phone });
+
+        if (user == null)
+            return NotFound(new { message = "Admin user not found" });
+
+        if (!string.IsNullOrEmpty(user.PasswordHash))
+            return BadRequest(new { message = "Password already set. Use login instead." });
+
+        var passwordHash = _authService.HashPassword(request.Password);
+        await conn.ExecuteAsync(
+            "UPDATE Users SET PasswordHash = @PasswordHash WHERE Id = @Id",
+            new { PasswordHash = passwordHash, user.Id });
+
+        _logger.LogInformation("Password set for admin user {Phone}", phone);
+        return Ok(new { message = "Password set successfully" });
+    }
+
+    /// <summary>
     /// Get current user profile
     /// </summary>
     [HttpGet("me")]

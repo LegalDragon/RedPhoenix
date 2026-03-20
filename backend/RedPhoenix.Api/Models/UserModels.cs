@@ -223,6 +223,12 @@ public class LoginRequest
     public string Password { get; set; } = string.Empty;
 }
 
+public class SetPasswordRequest
+{
+    public string Phone { get; set; } = string.Empty;
+    public string Password { get; set; } = string.Empty;
+}
+
 // ─── Phone Scanning DTOs ───
 
 public class PhoneScanRequest
