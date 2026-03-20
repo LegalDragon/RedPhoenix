@@ -36,7 +36,7 @@
     "scanPhones": "📷 扫描号码"
   },
   "login": {
-    "title": "USushi",
+    "title": "Red Phoenix",
     "subtitle": "会员奖励计划",
     "phoneLabel": "手机号码",
     "phonePlaceholder": "(555) 123-4567",
@@ -149,7 +149,7 @@
   },
   "adminDashboard": {
     "title": "管理仪表盘",
-    "subtitle": "USushi 会员计划概览",
+    "subtitle": "Red Phoenix 会员计划概览",
     "totalUsers": "总用户数",
     "mealsToday": "今日用餐",
     "activeRewards": "可用奖励",

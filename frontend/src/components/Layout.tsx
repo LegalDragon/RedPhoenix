@@ -56,9 +56,9 @@ export default function Layout() {
       >
         <div className="p-6 border-b border-gray-700 flex items-center justify-between">
           <div className="flex items-center">
-            <span className="text-3xl mr-2">🍣</span>
+            <img src="/logo.svg" alt="Red Phoenix" className="w-10 h-10 mr-2" />
             <div>
-              <h1 className="text-xl font-bold text-white">USushi</h1>
+              <h1 className="text-xl font-bold text-red-500">Red Phoenix</h1>
               <p className="text-xs text-gray-400">{t('common.loyaltyRewards')}</p>
             </div>
           </div>
@@ -158,8 +158,8 @@ export default function Layout() {
             </svg>
           </button>
           <div className="flex items-center">
-            <span className="text-xl mr-1">🍣</span>
-            <span className="text-lg font-bold text-white">USushi</span>
+            <img src="/logo.svg" alt="Red Phoenix" className="w-8 h-8 mr-1" />
+            <span className="text-lg font-bold text-red-500">Red Phoenix</span>
           </div>
           <div className="w-8" /> {/* Spacer for centering */}
         </header>

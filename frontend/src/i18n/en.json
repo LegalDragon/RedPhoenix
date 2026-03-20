@@ -36,7 +36,7 @@
     "scanPhones": "📷 Scan Phones"
   },
   "login": {
-    "title": "USushi",
+    "title": "Red Phoenix",
     "subtitle": "Loyalty Rewards Program",
     "phoneLabel": "Phone Number",
     "phonePlaceholder": "(555) 123-4567",
@@ -149,7 +149,7 @@
   },
   "adminDashboard": {
     "title": "Admin Dashboard",
-    "subtitle": "USushi Loyalty Program Overview",
+    "subtitle": "Red Phoenix Loyalty Program Overview",
     "totalUsers": "Total Users",
     "mealsToday": "Meals Today",
     "activeRewards": "Active Rewards",

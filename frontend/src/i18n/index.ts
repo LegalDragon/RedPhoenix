@@ -18,7 +18,7 @@ i18n
     },
     detection: {
       order: ['localStorage', 'navigator'],
-      lookupLocalStorage: 'usushi-lang',
+      lookupLocalStorage: 'redphoenix-lang',
       caches: ['localStorage'],
     },
   });

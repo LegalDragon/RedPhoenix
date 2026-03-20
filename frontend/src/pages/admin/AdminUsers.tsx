@@ -119,7 +119,7 @@ export default function AdminUsers() {
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    link.download = `usushi-users-${new Date().toISOString().split('T')[0]}.csv`;
+    link.download = `redphoenix-users-${new Date().toISOString().split('T')[0]}.csv`;
     link.click();
     URL.revokeObjectURL(url);
   };

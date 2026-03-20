@@ -1,0 +1,81 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
+  <defs>
+    <linearGradient id="phoenixGradient" x1="0%" y1="100%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#ff4500;stop-opacity:1" />
+      <stop offset="50%" style="stop-color:#ff6b35;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#ffd700;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="flameGradient" x1="0%" y1="100%" x2="0%" y2="0%">
+      <stop offset="0%" style="stop-color:#ff4500;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#ffd700;stop-opacity:0.8" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Background circle -->
+  <circle cx="100" cy="100" r="95" fill="#1a1a2e"/>
+  
+  <!-- Phoenix body -->
+  <path d="M100 160 
+           C70 140, 50 110, 55 80 
+           C58 60, 75 45, 100 40 
+           C125 45, 142 60, 145 80 
+           C150 110, 130 140, 100 160Z" 
+        fill="url(#phoenixGradient)" />
+  
+  <!-- Phoenix head -->
+  <ellipse cx="100" cy="55" rx="25" ry="20" fill="url(#phoenixGradient)" />
+  
+  <!-- Eye -->
+  <circle cx="108" cy="52" r="5" fill="#1a1a2e"/>
+  <circle cx="109" cy="51" r="2" fill="#fff"/>
+  
+  <!-- Beak -->
+  <path d="M125 55 L140 52 L125 60 Z" fill="#ff4500"/>
+  
+  <!-- Wings left -->
+  <path d="M55 80 
+           C30 70, 15 50, 25 30 
+           C35 45, 50 55, 55 80Z" 
+        fill="url(#phoenixGradient)" opacity="0.9"/>
+  <path d="M55 90 
+           C25 85, 10 70, 15 50 
+           C25 65, 45 75, 55 90Z" 
+        fill="url(#phoenixGradient)" opacity="0.8"/>
+  <path d="M58 100 
+           C30 100, 15 90, 18 70 
+           C28 85, 45 92, 58 100Z" 
+        fill="url(#phoenixGradient)" opacity="0.7"/>
+  
+  <!-- Wings right -->
+  <path d="M145 80 
+           C170 70, 185 50, 175 30 
+           C165 45, 150 55, 145 80Z" 
+        fill="url(#phoenixGradient)" opacity="0.9"/>
+  <path d="M145 90 
+           C175 85, 190 70, 185 50 
+           C175 65, 155 75, 145 90Z" 
+        fill="url(#phoenixGradient)" opacity="0.8"/>
+  <path d="M142 100 
+           C170 100, 185 90, 182 70 
+           C172 85, 155 92, 142 100Z" 
+        fill="url(#phoenixGradient)" opacity="0.7"/>
+  
+  <!-- Tail flames -->
+  <path d="M100 160 
+           C95 175, 85 185, 80 180 
+           C90 175, 95 165, 100 160Z" 
+        fill="url(#flameGradient)"/>
+  <path d="M100 160 
+           C100 180, 100 195, 100 190 
+           C105 180, 105 170, 100 160Z" 
+        fill="url(#flameGradient)"/>
+  <path d="M100 160 
+           C105 175, 115 185, 120 180 
+           C110 175, 105 165, 100 160Z" 
+        fill="url(#flameGradient)"/>
+  
+  <!-- Crown feathers -->
+  <path d="M85 40 C80 25, 85 15, 90 25 C92 32, 88 38, 85 40Z" fill="#ffd700"/>
+  <path d="M100 35 C100 18, 105 8, 110 20 C112 28, 105 33, 100 35Z" fill="#ffd700"/>
+  <path d="M115 40 C120 25, 115 15, 110 25 C108 32, 112 38, 115 40Z" fill="#ffd700"/>
+</svg>
