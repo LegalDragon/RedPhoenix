@@ -164,11 +164,15 @@ public class AuthController : ControllerBase
         if (userCount > 0)
             return BadRequest(new { message = "Setup already completed. Use phone login instead." });
 
+        string? passwordHash = null;
+        if (!string.IsNullOrWhiteSpace(request.Password))
+            passwordHash = _authService.HashPassword(request.Password);
+
         var id = await conn.QuerySingleAsync<int>(
-            @"INSERT INTO Users (Phone, Role, IsActive, CreatedAt)
+            @"INSERT INTO Users (Phone, PasswordHash, Role, IsActive, CreatedAt)
               OUTPUT INSERTED.Id
-              VALUES (@Phone, 'Admin', 1, GETUTCDATE())",
-            new { Phone = phone });
+              VALUES (@Phone, @PasswordHash, 'Admin', 1, GETUTCDATE())",
+            new { Phone = phone, PasswordHash = passwordHash });
 
         var token = _authService.GenerateToken(phone, "Admin", id);
         _logger.LogInformation("Initial admin created with phone {Phone}", phone);
@@ -178,6 +182,46 @@ public class AuthController : ControllerBase
             Token = token,
             Phone = phone,
             Role = "Admin",
+            ExpiresAt = _authService.GetTokenExpiry(token)
+        });
+    }
+
+    /// <summary>
+    /// Admin password login
+    /// </summary>
+    [HttpPost("login")]
+    public async Task<IActionResult> Login([FromBody] LoginRequest request)
+    {
+        if (string.IsNullOrWhiteSpace(request.Phone) || string.IsNullOrWhiteSpace(request.Password))
+            return BadRequest(new { message = "Phone and password are required" });
+
+        var phone = new string(request.Phone.Where(char.IsDigit).ToArray());
+
+        using var conn = CreateConnection();
+        var user = await conn.QueryFirstOrDefaultAsync<User>(
+            "SELECT * FROM Users WHERE Phone = @Phone", new { Phone = phone });
+
+        if (user == null)
+            return Unauthorized(new { message = "Invalid phone or password" });
+
+        if (string.IsNullOrEmpty(user.PasswordHash))
+            return Unauthorized(new { message = "Password login not enabled for this account. Use SMS verification." });
+
+        if (!_authService.VerifyPassword(request.Password, user.PasswordHash))
+            return Unauthorized(new { message = "Invalid phone or password" });
+
+        if (!user.IsActive)
+            return Unauthorized(new { message = "Account is disabled" });
+
+        var token = _authService.GenerateToken(user.Phone, user.Role, user.Id);
+        return Ok(new LoginResponse
+        {
+            Token = token,
+            Phone = user.Phone,
+            DisplayName = user.DisplayName,
+            FirstName = user.FirstName,
+            LastName = user.LastName,
+            Role = user.Role,
             ExpiresAt = _authService.GetTokenExpiry(token)
         });
     }

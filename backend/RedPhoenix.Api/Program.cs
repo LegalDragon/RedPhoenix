@@ -262,6 +262,12 @@ using (var scope = app.Services.CreateScope())
                     ALTER TABLE Meals ADD ReceiptAssetId INT NULL;
             ");
 
+            // Migration 006: Add PasswordHash to Users
+            await conn.ExecuteAsync(@"
+                IF NOT EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID('Users') AND name = 'PasswordHash')
+                    ALTER TABLE Users ADD PasswordHash NVARCHAR(200) NULL;
+            ");
+
             app.Logger.LogInformation("Database migration completed successfully");
         }
         catch (Exception ex)

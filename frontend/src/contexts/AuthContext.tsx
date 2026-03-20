@@ -27,6 +27,7 @@ interface AuthContextType {
   isAdmin: boolean;
   sendOtp: (phone: string) => Promise<void>;
   verifyOtp: (phone: string, code: string) => Promise<void>;
+  loginWithPassword: (phone: string, password: string) => Promise<void>;
   logout: () => void;
 }
 
@@ -64,6 +65,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setToken(response.token);
   };
 
+  const loginWithPassword = async (phone: string, password: string) => {
+    const response = await api.post<LoginResponse>('/auth/login', { phone, password });
+    localStorage.setItem('token', response.token);
+    setToken(response.token);
+  };
+
   return (
     <AuthContext.Provider
       value={{
@@ -74,6 +81,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         isAdmin: user?.role === 'Admin',
         sendOtp,
         verifyOtp,
+        loginWithPassword,
         logout,
       }}
     >

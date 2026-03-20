@@ -1,15 +1,16 @@
 import React, { useState } from 'react';
-import { Phone, ArrowRight, Shield } from 'lucide-react';
+import { Phone, ArrowRight, Shield, Lock, User } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../contexts/AuthContext';
 import LanguageSwitcher from '../components/LanguageSwitcher';
 
 export default function Login() {
   const { t } = useTranslation();
-  const { sendOtp, verifyOtp } = useAuth();
+  const { sendOtp, verifyOtp, loginWithPassword } = useAuth();
   const [phone, setPhone] = useState('');
   const [code, setCode] = useState('');
-  const [step, setStep] = useState<'phone' | 'otp'>('phone');
+  const [password, setPassword] = useState('');
+  const [step, setStep] = useState<'phone' | 'otp' | 'admin'>('phone');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [countdown, setCountdown] = useState(0);
@@ -77,6 +78,23 @@ export default function Login() {
     }
   };
 
+  const handleAdminLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (phone.length < 10 || !password) {
+      setError('Phone and password are required');
+      return;
+    }
+    setError('');
+    setLoading(true);
+    try {
+      await loginWithPassword(phone, password);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Login failed');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleResend = async () => {
     if (countdown > 0) return;
     setError('');
@@ -92,7 +110,7 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-900 to-sushi-950 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-900 to-red-950 flex items-center justify-center p-4">
       <div className="max-w-md w-full">
         <div className="bg-gray-800 rounded-2xl shadow-2xl p-8 border border-gray-700">
           {/* Language switcher */}
@@ -102,8 +120,8 @@ export default function Login() {
 
           {/* Logo */}
           <div className="text-center mb-8">
-            <div className="text-6xl mb-4">🍣</div>
-            <h1 className="text-3xl font-bold text-white mb-2">{t('login.title')}</h1>
+            <img src="/logo.svg" alt="Red Phoenix" className="w-24 h-24 mx-auto mb-4" />
+            <h1 className="text-3xl font-bold text-red-500 mb-2">Red Phoenix</h1>
             <p className="text-gray-400">{t('login.subtitle')}</p>
           </div>
 
@@ -113,7 +131,58 @@ export default function Login() {
             </div>
           )}
 
-          {step === 'phone' ? (
+          {step === 'admin' ? (
+            <form onSubmit={handleAdminLogin} className="space-y-6">
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-2">
+                  Phone Number
+                </label>
+                <div className="relative">
+                  <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
+                  <input
+                    type="tel"
+                    value={formatPhone(phone)}
+                    onChange={handlePhoneChange}
+                    className="w-full pl-10 pr-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent text-lg"
+                    placeholder="(555) 123-4567"
+                    autoFocus
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-2">
+                  Password
+                </label>
+                <div className="relative">
+                  <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
+                  <input
+                    type="password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className="w-full pl-10 pr-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                    placeholder="Enter password"
+                  />
+                </div>
+              </div>
+
+              <button
+                type="submit"
+                disabled={loading || phone.length < 10 || !password}
+                className="w-full bg-red-600 hover:bg-red-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white font-semibold py-3 px-4 rounded-lg transition duration-200 flex items-center justify-center"
+              >
+                {loading ? 'Signing in...' : 'Sign In'}
+              </button>
+
+              <button
+                type="button"
+                onClick={() => { setStep('phone'); setPassword(''); setError(''); }}
+                className="w-full text-gray-400 hover:text-white text-sm transition"
+              >
+                ← Back to SMS login
+              </button>
+            </form>
+          ) : step === 'phone' ? (
             <form onSubmit={handleSendOtp} className="space-y-6">
               <div>
                 <label className="block text-sm font-medium text-gray-300 mb-2">
@@ -125,7 +194,7 @@ export default function Login() {
                     type="tel"
                     value={formatPhone(phone)}
                     onChange={handlePhoneChange}
-                    className="w-full pl-10 pr-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-sushi-500 focus:border-transparent text-lg"
+                    className="w-full pl-10 pr-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent text-lg"
                     placeholder={t('login.phonePlaceholder')}
                     autoFocus
                   />
@@ -136,7 +205,7 @@ export default function Login() {
               <button
                 type="submit"
                 disabled={loading || phone.length < 10}
-                className="w-full bg-sushi-600 hover:bg-sushi-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white font-semibold py-3 px-4 rounded-lg transition duration-200 flex items-center justify-center"
+                className="w-full bg-red-600 hover:bg-red-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white font-semibold py-3 px-4 rounded-lg transition duration-200 flex items-center justify-center"
               >
                 {loading ? (
                   <span>{t('login.sendingCode')}</span>
@@ -147,6 +216,17 @@ export default function Login() {
                   </>
                 )}
               </button>
+
+              <div className="text-center">
+                <button
+                  type="button"
+                  onClick={() => { setStep('admin'); setError(''); }}
+                  className="text-red-400 hover:text-red-300 text-sm transition inline-flex items-center"
+                >
+                  <User className="mr-1" size={16} />
+                  Admin Login
+                </button>
+              </div>
             </form>
           ) : (
             <form onSubmit={handleVerifyOtp} className="space-y-6">
@@ -160,7 +240,7 @@ export default function Login() {
                     type="text"
                     value={code}
                     onChange={(e) => setCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
-                    className="w-full pl-10 pr-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-sushi-500 focus:border-transparent text-2xl tracking-[0.5em] text-center"
+                    className="w-full pl-10 pr-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent text-2xl tracking-[0.5em] text-center"
                     placeholder={t('login.codePlaceholder')}
                     maxLength={6}
                     autoFocus
@@ -174,7 +254,7 @@ export default function Login() {
               <button
                 type="submit"
                 disabled={loading || code.length !== 6}
-                className="w-full bg-sushi-600 hover:bg-sushi-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white font-semibold py-3 px-4 rounded-lg transition duration-200 flex items-center justify-center"
+                className="w-full bg-red-600 hover:bg-red-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white font-semibold py-3 px-4 rounded-lg transition duration-200 flex items-center justify-center"
               >
                 {loading ? t('login.verifying') : t('login.verify')}
               </button>
@@ -191,7 +271,7 @@ export default function Login() {
                   type="button"
                   onClick={handleResend}
                   disabled={countdown > 0}
-                  className="text-sushi-400 hover:text-sushi-300 disabled:text-gray-600 transition"
+                  className="text-red-400 hover:text-red-300 disabled:text-gray-600 transition"
                 >
                   {countdown > 0 ? t('login.resendIn', { seconds: countdown }) : t('login.resendCode')}
                 </button>

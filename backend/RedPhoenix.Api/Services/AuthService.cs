@@ -1,5 +1,6 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
+using System.Security.Cryptography;
 using System.Text;
 using Microsoft.IdentityModel.Tokens;
 
@@ -47,5 +48,37 @@ public class AuthService
         var handler = new JwtSecurityTokenHandler();
         var jwtToken = handler.ReadJwtToken(token);
         return jwtToken.ValidTo;
+    }
+
+    public string HashPassword(string password)
+    {
+        using var rng = RandomNumberGenerator.Create();
+        var salt = new byte[16];
+        rng.GetBytes(salt);
+
+        using var pbkdf2 = new Rfc2898DeriveBytes(password, salt, 100000, HashAlgorithmName.SHA256);
+        var hash = pbkdf2.GetBytes(32);
+
+        var combined = new byte[48];
+        Buffer.BlockCopy(salt, 0, combined, 0, 16);
+        Buffer.BlockCopy(hash, 0, combined, 16, 32);
+
+        return Convert.ToBase64String(combined);
+    }
+
+    public bool VerifyPassword(string password, string storedHash)
+    {
+        var combined = Convert.FromBase64String(storedHash);
+        if (combined.Length != 48) return false;
+
+        var salt = new byte[16];
+        var storedHashBytes = new byte[32];
+        Buffer.BlockCopy(combined, 0, salt, 0, 16);
+        Buffer.BlockCopy(combined, 16, storedHashBytes, 0, 32);
+
+        using var pbkdf2 = new Rfc2898DeriveBytes(password, salt, 100000, HashAlgorithmName.SHA256);
+        var computedHash = pbkdf2.GetBytes(32);
+
+        return CryptographicOperations.FixedTimeEquals(computedHash, storedHashBytes);
     }
 }
