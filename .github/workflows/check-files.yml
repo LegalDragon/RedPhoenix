@@ -1,0 +1,43 @@
+name: Check Files
+
+on:
+  workflow_dispatch:
+    inputs:
+      path:
+        description: 'Path to check'
+        required: true
+        type: string
+        default: 'F:\New_WWW\Demo_USushi\API\wwwroot\uploads\receipts'
+
+jobs:
+  check:
+    runs-on: self-hosted
+    steps:
+      - name: List files
+        shell: powershell
+        run: |
+          $p = "${{ inputs.path }}"
+          Write-Host "Checking: $p"
+          if (Test-Path $p) {
+            Get-ChildItem $p -Recurse | ForEach-Object {
+              Write-Host "$($_.Length) $($_.FullName)"
+            }
+          } else {
+            Write-Host "Path not found: $p"
+          }
+
+      - name: Base64 encode first 3 images
+        shell: powershell
+        run: |
+          $p = "${{ inputs.path }}"
+          if (Test-Path $p) {
+            $files = Get-ChildItem $p -File | Select-Object -First 3
+            foreach ($f in $files) {
+              Write-Host "=== FILE: $($f.Name) ==="
+              $bytes = [System.IO.File]::ReadAllBytes($f.FullName)
+              $b64 = [Convert]::ToBase64String($bytes)
+              Write-Host "BASE64_START"
+              Write-Host $b64
+              Write-Host "BASE64_END"
+            }
+          }

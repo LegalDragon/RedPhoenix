@@ -1,0 +1,28 @@
+name: Run SQL
+
+on:
+  workflow_dispatch:
+    inputs:
+      sql:
+        description: 'SQL to execute'
+        required: true
+        type: string
+      db_name:
+        description: 'Database name'
+        required: true
+        type: string
+        default: 'Demo_USushi'
+
+jobs:
+  run:
+    runs-on: self-hosted
+    steps:
+      - name: Execute SQL
+        shell: powershell
+        run: |
+          $db = "${{ github.event.inputs.db_name }}"
+          $sql = "${{ github.event.inputs.sql }}"
+          Write-Host "Running SQL on $db..."
+          $result = sqlcmd -S localhost -d $db -Q $sql -h -1 -W 2>&1
+          $resultText = ($result | Out-String).Trim()
+          Write-Host $resultText

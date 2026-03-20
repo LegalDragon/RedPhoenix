@@ -1,0 +1,68 @@
+name: Fix IIS Site
+
+on:
+  workflow_dispatch:
+    inputs:
+      site_name:
+        description: 'IIS site name'
+        required: true
+        type: string
+      hostname:
+        description: 'Hostname for bindings'
+        required: true
+        type: string
+
+jobs:
+  fix:
+    runs-on: self-hosted
+    steps:
+      - name: Fix IIS site bindings
+        shell: powershell
+        run: |
+          Import-Module WebAdministration
+          $site = "${{ inputs.site_name }}"
+          $hostname = "${{ inputs.hostname }}"
+          
+          Write-Host "=== Before ==="
+          Get-Website -Name $site | Format-List
+          
+          # Check if site exists
+          $s = Get-Website -Name $site
+          if (-not $s) {
+            Write-Host "Site $site not found!"
+            exit 1
+          }
+          
+          # Remove existing bindings and re-add
+          Write-Host "Adding HTTP binding..."
+          try {
+            New-WebBinding -Name $site -Protocol http -Port 80 -HostHeader $hostname -ErrorAction SilentlyContinue
+          } catch { Write-Host "HTTP binding may already exist: $_" }
+          
+          Write-Host "Adding HTTPS binding..."
+          try {
+            New-WebBinding -Name $site -Protocol https -Port 443 -HostHeader $hostname -SslFlags 1 -ErrorAction SilentlyContinue
+          } catch { Write-Host "HTTPS binding may already exist: $_" }
+          
+          # Assign SSL cert (synthia.bot wildcard from WebHosting store)
+          $cert = Get-ChildItem Cert:\LocalMachine\WebHosting | Where-Object { $_.Subject -like "*synthia.bot*" -and $_.NotAfter -gt (Get-Date) } | Select-Object -First 1
+          if ($cert) {
+            $binding = Get-WebBinding -Name $site -Protocol https -HostHeader $hostname
+            if ($binding) {
+              $binding.AddSslCertificate($cert.Thumbprint, "WebHosting")
+              Write-Host "SSL cert assigned: $($cert.Thumbprint)"
+            }
+          } else {
+            Write-Host "WARNING: No synthia.bot cert found"
+          }
+          
+          # Start site if stopped
+          Start-Website -Name $site -ErrorAction SilentlyContinue
+          
+          Write-Host "`n=== After ==="
+          Get-Website -Name $site | Format-List
+          Get-WebBinding -Name $site | ForEach-Object { Write-Host $_.bindingInformation }
+          
+          # Restart app pool
+          Restart-WebAppPool -Name $site
+          Write-Host "App pool restarted"

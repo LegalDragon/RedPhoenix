@@ -1,0 +1,65 @@
+name: Update Config
+
+on:
+  workflow_dispatch:
+    inputs:
+      json_path:
+        description: 'JSON path to set (e.g. OpenAI:ApiKey)'
+        required: true
+        type: string
+      value:
+        description: 'Value to set'
+        required: true
+        type: string
+      site_name:
+        description: 'IIS Site Name'
+        required: true
+        type: string
+        default: 'Demo_USushi'
+
+jobs:
+  update:
+    runs-on: self-hosted
+    steps:
+      - name: Update appsettings.Production.json
+        shell: powershell
+        run: |
+          $siteName = "${{ github.event.inputs.site_name }}"
+          $jsonPath = "${{ github.event.inputs.json_path }}"
+          $value = "${{ github.event.inputs.value }}"
+          $configPath = "F:\New_WWW\$siteName\API\appsettings.Production.json"
+          
+          if (!(Test-Path $configPath)) {
+            Write-Host "ERROR: Config file not found at $configPath"
+            exit 1
+          }
+          
+          $config = Get-Content $configPath -Raw | ConvertFrom-Json
+          
+          $parts = $jsonPath -split ":"
+          $current = $config
+          for ($i = 0; $i -lt $parts.Length - 1; $i++) {
+            $key = $parts[$i]
+            if (-not ($current.PSObject.Properties.Name -contains $key)) {
+              $current | Add-Member -NotePropertyName $key -NotePropertyValue (New-Object PSObject)
+            }
+            $current = $current.$key
+          }
+          $lastKey = $parts[-1]
+          if ($current.PSObject.Properties.Name -contains $lastKey) {
+            $current.$lastKey = $value
+          } else {
+            $current | Add-Member -NotePropertyName $lastKey -NotePropertyValue $value
+          }
+          
+          $config | ConvertTo-Json -Depth 10 | Set-Content -Path $configPath -Encoding UTF8
+          Write-Host "[OK] Set $jsonPath in $configPath"
+
+      - name: Restart App Pool
+        shell: powershell
+        run: |
+          Import-Module WebAdministration
+          $poolName = "${{ github.event.inputs.site_name }}"
+          Restart-WebAppPool -Name $poolName
+          Start-Sleep -Seconds 3
+          Write-Host "[OK] App pool restarted"

@@ -1,0 +1,49 @@
+name: Check Logs
+
+on:
+  workflow_dispatch:
+    inputs:
+      site_name:
+        description: 'IIS site to check'
+        required: false
+        default: 'Demo_USushi'
+        type: string
+
+jobs:
+  check:
+    runs-on: self-hosted
+    steps:
+      - name: Check IIS site
+        shell: powershell
+        run: |
+          Import-Module WebAdministration
+          
+          $site = "${{ inputs.site_name }}"
+          Write-Host "=== App Pool: $site ==="
+          try {
+            $state = Get-WebAppPoolState -Name $site 2>$null
+            Write-Host "State: $($state.Value)"
+          } catch {
+            Write-Host "App pool not found or error: $_"
+          }
+          
+          Write-Host "`n=== Site: $site ==="
+          try {
+            $s = Get-Website -Name $site 2>$null
+            Write-Host "State: $($s.State)"
+            Write-Host "Bindings: $($s.Bindings.Collection | ForEach-Object { $_.bindingInformation })"
+            Write-Host "PhysicalPath: $($s.PhysicalPath)"
+          } catch {
+            Write-Host "Site not found: $_"
+          }
+          
+          # Check for stdout logs
+          $apiPath = "F:\New_WWW\$site\API"
+          $logPath = Join-Path $apiPath "logs"
+          if (Test-Path $logPath) {
+            $latest = Get-ChildItem $logPath -File | Sort-Object LastWriteTime -Descending | Select-Object -First 1
+            if ($latest) {
+              Write-Host "`n=== Latest log: $($latest.Name) ==="
+              Get-Content $latest.FullName -Tail 30
+            }
+          }

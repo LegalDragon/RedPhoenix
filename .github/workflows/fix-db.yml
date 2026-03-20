@@ -1,0 +1,106 @@
+name: Fix DB Permissions
+
+on:
+  workflow_dispatch:
+    inputs:
+      site_name:
+        description: 'IIS Site Name (= App Pool name)'
+        required: true
+        type: string
+        default: 'Demo_USushi'
+      db_name:
+        description: 'Database name'
+        required: true
+        type: string
+        default: 'Demo_USushi'
+
+jobs:
+  fix:
+    runs-on: self-hosted
+    steps:
+      - name: Grant DB permissions to App Pool
+        shell: powershell
+        run: |
+          $siteName = "${{ github.event.inputs.site_name }}"
+          $dbName = "${{ github.event.inputs.db_name }}"
+          $appPoolLogin = "IIS APPPOOL\$siteName"
+
+          Write-Host "Granting DB access for $appPoolLogin on $dbName..."
+
+          $sql = @"
+          IF NOT EXISTS (SELECT * FROM sys.server_principals WHERE name = N'$appPoolLogin')
+              CREATE LOGIN [$appPoolLogin] FROM WINDOWS;
+          PRINT 'LOGIN_OK';
+
+          USE [$dbName];
+          IF NOT EXISTS (SELECT * FROM sys.database_principals WHERE name = N'$appPoolLogin')
+              CREATE USER [$appPoolLogin] FOR LOGIN [$appPoolLogin];
+          ALTER ROLE db_datareader ADD MEMBER [$appPoolLogin];
+          ALTER ROLE db_datawriter ADD MEMBER [$appPoolLogin];
+          ALTER ROLE db_ddladmin ADD MEMBER [$appPoolLogin];
+          PRINT 'ACCESS_GRANTED';
+          "@
+
+          $sqlFile = Join-Path $env:TEMP "fix-db-$(Get-Random).sql"
+          $sql | Set-Content -Path $sqlFile -Encoding UTF8
+          
+          try {
+              $result = sqlcmd -S localhost -i $sqlFile -h -1 -W 2>&1
+              $resultText = ($result | Out-String).Trim()
+              Write-Host $resultText
+              
+              if ($resultText -match "ACCESS_GRANTED") {
+                  Write-Host "[OK] Permissions granted successfully" -ForegroundColor Green
+              } else {
+                  Write-Host "[WARN] Check output above for errors" -ForegroundColor Yellow
+              }
+          } finally {
+              Remove-Item $sqlFile -ErrorAction SilentlyContinue
+          }
+
+      - name: Restart App Pool
+        shell: powershell
+        run: |
+          Import-Module WebAdministration
+          $poolName = "${{ github.event.inputs.site_name }}"
+          Write-Host "Restarting app pool: $poolName"
+          Restart-WebAppPool -Name $poolName
+          Start-Sleep -Seconds 3
+          Write-Host "[OK] App pool restarted"
+
+      - name: Fix uploads folder permissions
+        shell: powershell
+        run: |
+          $siteName = "${{ github.event.inputs.site_name }}"
+          $uploadsBase = "F:\New_WWW\$siteName\API\wwwroot\uploads"
+          $appPoolIdentity = "IIS AppPool\$siteName"
+          
+          # Create all upload subdirectories
+          $subDirs = @("receipts", "scan-phones")
+          foreach ($dir in $subDirs) {
+            $fullPath = Join-Path $uploadsBase $dir
+            if (!(Test-Path $fullPath)) {
+              New-Item -ItemType Directory -Path $fullPath -Force | Out-Null
+              Write-Host "Created: $fullPath"
+            }
+          }
+          
+          # Grant Modify on the parent uploads folder (covers all subdirs)
+          $acl = Get-Acl $uploadsBase
+          $rule = New-Object System.Security.AccessControl.FileSystemAccessRule(
+            $appPoolIdentity, "Modify", "ContainerInherit,ObjectInherit", "None", "Allow"
+          )
+          $acl.SetAccessRule($rule)
+          Set-Acl -Path $uploadsBase -AclObject $acl
+          Write-Host "[OK] Granted Modify to $appPoolIdentity on $uploadsBase (covers all subdirs)"
+
+      - name: Health check
+        shell: powershell
+        run: |
+          Start-Sleep -Seconds 5
+          try {
+            $resp = Invoke-WebRequest -Uri "http://localhost/api/health" -Headers @{ Host = "usushi.synthia.bot" } -UseBasicParsing -TimeoutSec 10
+            Write-Host "[OK] Health check: $($resp.StatusCode)"
+          } catch {
+            Write-Host "[WARN] Health check failed: $_"
+          }
